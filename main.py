@@ -1,4 +1,3 @@
-
 class Product:
     def __init__(self, name, description, price, quantity):
         self.name = name
@@ -8,14 +7,16 @@ class Product:
 
 
 class Category:
-    category_count = 0  # Атрибут класса: количество категорий
-    product_count = 0   # Атрибут класса: количество товаров
+    category_count = 0
+    product_count = 0
+    _unique_products = set()
 
     def __init__(self, name, description, products):
         self.name = name
         self.description = description
         self.products = products
 
-        # Автоматическое обновление атрибутов класса
         Category.category_count += 1
-        Category.product_count += len(products)
+        for product in products:
+            Category._unique_products.add(product)
+        Category.product_count = len(Category._unique_products)

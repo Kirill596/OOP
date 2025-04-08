@@ -2,6 +2,7 @@ from main import Product, Category
 
 
 def test_category_counts():
+    # Создаем продукты
     product1 = Product(
         name="Laptop",
         description="A powerful laptop",
@@ -14,6 +15,7 @@ def test_category_counts():
         price=500,
         quantity=10
     )
+
     # Создаем категории
     Category(
         name="Electronics",
@@ -25,6 +27,7 @@ def test_category_counts():
         description="All books",
         products=[product1]
     )
+
     # Проверяем счетчики
     assert Category.category_count == 2  # Две категории созданы
-    assert Category.product_count == 3  # Два уникальных продукта
+    assert Category.product_count == 2  # Два уникальных продукта
