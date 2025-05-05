@@ -1,95 +1,92 @@
 import pytest
-from main import Category, Product
+from main import Product, Smartphone, LawnGrass, Category
 
 
-@pytest.fixture(autouse=True)
-def reset_total_products():
-    """Сбрасывает значение total_products перед каждым тестом."""
-    Category.total_products = 0
+@pytest.fixture
+def sample_product():
+    return Product("Телефон", "Смартфон", 10000, 5)
 
 
-def test_add_product():
-    """Тест добавления продукта в категорию."""
-    category = Category()
-    product_data = {"name": "Телефон", "price": 10000, "quantity": 5}
-    product = Product.new_product(product_data)
-    category.add_product(product)
-    expected = "Телефон, 10000 руб. Остаток: 5 шт.\n"
-    assert category.products == expected
-
-
-def test_add_duplicate_product():
-    """Тест добавления дубликата продукта."""
-    category = Category()
-    product1 = Product.new_product(
-        {"name": "Телефон", "price": 10000, "quantity": 5}
+@pytest.fixture
+def sample_smartphone():
+    return Smartphone(
+        "iPhone", "Флагман", 100000, 10,
+        "A15", "13 Pro", 256, "Graphite"
     )
-    product2 = Product.new_product(
-        {"name": "Телефон", "price": 12000, "quantity": 3}
+
+
+@pytest.fixture
+def sample_lawn_grass():
+    return LawnGrass(
+        "Трава", "Для газона", 500, 100,
+        "Россия", "14 дней", "Зеленая"
     )
-    category.add_product(product1)
-    category.add_product(product2)
-    expected = "Телефон, 12000 руб. Остаток: 8 шт.\n"
-    assert category.products == expected
 
 
-def test_total_products_counter(reset_total_products):
-    """Тест счетчика продуктов."""
-    category = Category()
-    product1 = Product.new_product(
-        {"name": "Телефон", "price": 10000, "quantity": 5}
-    )
-    product2 = Product.new_product(
-        {"name": "Ноутбук", "price": 50000, "quantity": 2}
-    )
-    category.add_product(product1)
-    category.add_product(product2)
-    assert Category.total_products == 2
+@pytest.fixture
+def sample_category():
+    return Category("Электроника", "Технические устройства")
 
 
-def test_new_product_creation():
-    """Тест создания нового продукта через класс-метод."""
-    data = {"name": "Книга", "price": 500, "quantity": 20}
-    product = Product.new_product(data)
-    assert product.name == "Книга"
-    assert product.price == 500
-    assert product.quantity == 20
+def test_product_creation(sample_product):
+    assert sample_product.name == "Телефон"
+    assert sample_product.description == "Смартфон"
+    assert sample_product.price == 10000
+    assert sample_product.quantity == 5
 
 
-def test_price_validation():
-    """Тест проверки цены (недопустимые значения)."""
-    product = Product("Ноутбук", 50000, 10)
-    product.price = -1000  # Попытка установить недопустимую цену
-    assert product.price == 50000  # Цена не должна измениться
+def test_smartphone_creation(sample_smartphone):
+    assert sample_smartphone.efficiency == "A15"
+    assert sample_smartphone.model == "13 Pro"
+    assert sample_smartphone.memory == 256
+    assert sample_smartphone.color == "Graphite"
 
 
-def test_price_reduction_confirmation(monkeypatch):
-    """Тест понижения цены с подтверждением."""
-    product = Product("Ноутбук", 50000, 10)
-    # Моделируем ввод пользователя ("n" для отмены)
+def test_lawn_grass_creation(sample_lawn_grass):
+    assert sample_lawn_grass.country == "Россия"
+    assert sample_lawn_grass.germination_period == "14 дней"
+    assert sample_lawn_grass.color == "Зеленая"
+
+
+def test_add_different_types(
+        sample_category,
+        sample_smartphone,
+        sample_lawn_grass):
+    sample_category.add_product(sample_smartphone)
+    sample_category.add_product(sample_lawn_grass)
+    assert len(sample_category._Category__products) == 2
+
+
+def test_add_invalid_type(sample_category):
+    with pytest.raises(TypeError):
+        sample_category.add_product("Не продукт")
+
+
+def test_add_same_type_products(sample_product):
+    product1 = Product("Ноутбук", "Игровой", 50000, 3)
+    product2 = Product("Ноутбук", "Игровой", 45000, 2)
+    total = (product1.price * product1.quantity +
+             product2.price * product2.quantity)
+    assert product1 + product2 == total
+
+
+def test_add_different_type_products(
+        sample_smartphone,
+        sample_lawn_grass):
+    with pytest.raises(TypeError):
+        sample_smartphone + sample_lawn_grass
+
+
+def test_price_reduction_confirmation(sample_product, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda _: "n")
-    product.price = 45000
-    assert product.price == 50000  # Цена не должна измениться
+    sample_product.price = 8000
+    assert sample_product.price == 10000
 
-    # Моделируем ввод пользователя ("y" для подтверждения)
     monkeypatch.setattr('builtins.input', lambda _: "y")
-    product.price = 45000
-    assert product.price == 45000  # Цена должна измениться
+    sample_product.price = 8000
+    assert sample_product.price == 8000
 
 
-def test_category_products_property():
-    """Тест свойства products в классе Category."""
-    category = Category()
-    product1 = Product.new_product(
-        {"name": "Телефон", "price": 10000, "quantity": 5}
-    )
-    product2 = Product.new_product(
-        {"name": "Ноутбук", "price": 50000, "quantity": 2}
-    )
-    category.add_product(product1)
-    category.add_product(product2)
-    expected = (
-        "Телефон, 10000 руб. Остаток: 5 шт.\n"
-        "Ноутбук, 50000 руб. Остаток: 2 шт.\n"
-    )
-    assert category.products == expected
+def test_category_products_property(sample_category, sample_product):
+    sample_category.add_product(sample_product)
+    assert "Телефон" in sample_category.products

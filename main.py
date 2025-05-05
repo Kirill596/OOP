@@ -1,64 +1,102 @@
-class Category:
-    total_products = 0  # Класс-атрибут для подсчета продуктов
-
-    def __init__(self):
-        self.__products = []  # Приватный атрибут для хранения товаров
-
-    def add_product(self, product):
-        """Добавление продукта в категорию."""
-        if isinstance(product, Product):
-            for existing_product in self.__products:
-                if existing_product.name == product.name:
-                    # Объединяем количество
-                    existing_product.quantity += product.quantity
-                    # Выбираем более высокую цену
-                    existing_product.price = max(existing_product.price, product.price)
-                    return
-            # Если дубликата нет, добавляем новый продукт
-            self.__products.append(product)
-            Category.total_products += 1  # Увеличиваем счетчик продуктов
-        else:
-            raise ValueError("Можно добавлять только объекты класса Product")
-
-    @property
-    def products(self):
-        """Геттер для вывода списка товаров."""
-        result = ""
-        for product in self.__products:
-            result += f"{product.name}, {product.price} руб. Остаток: {product.quantity} шт.\n"
-        return result
-
-
 class Product:
-    def __init__(self, name, price, quantity):
+    """Базовый класс продукта"""
+    total_products = 0
+
+    def __init__(self, name, description, price, quantity):
         self.name = name
-        self.__price = price  # Приватный атрибут цены
+        self.description = description
+        self.__price = price
         self.quantity = quantity
+        Product.total_products += 1
 
     @classmethod
-    def new_product(cls, data):
-        """Создание нового продукта из словаря."""
-        if not isinstance(data, dict):
-            raise ValueError("Данные должны быть переданы в виде словаря")
-        required_keys = {"name", "price", "quantity"}
-        if not required_keys.issubset(data.keys()):
-            raise ValueError("Словарь должен содержать ключи: 'name', 'price', 'quantity'")
-        return cls(data["name"], data["price"], data["quantity"])
+    def new_product(cls, product_data):
+        """Создает новый продукт из словаря"""
+        return cls(
+            name=product_data['name'],
+            description=product_data.get('description', ''),
+            price=product_data['price'],
+            quantity=product_data.get('quantity', 0)
+        )
 
     @property
     def price(self):
-        """Геттер для цены."""
         return self.__price
 
     @price.setter
-    def price(self, value):
-        """Сеттер для цены с проверками."""
-        if value <= 0:
-            print("Цена не должна быть нулевая или отрицательная")
-            return
-        if value < self.__price:
-            confirmation = input("Вы уверены, что хотите понизить цену? (y/n): ")
-            if confirmation.lower() != "y":
-                print("Изменение цены отменено")
-                return
-        self.__price = value
+    def price(self, new_price):
+        if new_price <= 0:
+            print("Цена введена некорректная")
+        elif new_price < self.__price:
+            confirmation = input("Вы уверены, что хотите снизить цену? (y/n): ")
+            if confirmation.lower() == 'y':
+                self.__price = new_price
+        else:
+            self.__price = new_price
+
+    def __str__(self):
+        return f"{self.name}, {self.price} руб. Остаток: {self.quantity} шт."
+
+    def __add__(self, other):
+        if type(self) != type(other):
+            raise TypeError("Нельзя складывать продукты разных типов")
+        return (self.price * self.quantity) + (other.price * other.quantity)
+
+
+class Smartphone(Product):
+    """Класс смартфона (наследник Product)"""
+
+    def __init__(self, name, description, price, quantity,
+                 efficiency, model, memory, color):
+        super().__init__(name, description, price, quantity)
+        self.efficiency = efficiency
+        self.model = model
+        self.memory = memory
+        self.color = color
+
+
+class LawnGrass(Product):
+    """Класс газонной травы (наследник Product)"""
+
+    def __init__(self, name, description, price, quantity,
+                 country, germination_period, color):
+        super().__init__(name, description, price, quantity)
+        self.country = country
+        self.germination_period = germination_period
+        self.color = color
+
+
+class Category:
+    """Класс категории товаров"""
+    total_categories = 0
+    total_unique_products = 0
+
+    def __init__(self, name, description, products=None):
+        self.name = name
+        self.description = description
+        self.__products = products if products is not None else []
+        Category.total_categories += 1
+
+    def add_product(self, product):
+        """Добавление продукта с проверкой типа"""
+        if not isinstance(product, (Product, Smartphone, LawnGrass)):
+            raise TypeError("Можно добавлять только продукты или их наследники")
+
+        # Проверка на дубликат
+        existing_product = next((p for p in self.__products if p.name == product.name), None)
+        if existing_product:
+            existing_product.quantity += product.quantity
+            if existing_product.price != product.price:
+                existing_product.price = product.price
+        else:
+            self.__products.append(product)
+            Category.total_unique_products += 1
+
+    @property
+    def products(self):
+        """Геттер для вывода информации о продуктах"""
+        return "\n".join(str(product) for product in self.__products) + "\n"
+
+    def __str__(self):
+        total_quantity = sum(product.quantity for product in self.__products)
+        return f"{self.name}, количество продуктов: {total_quantity} шт."
