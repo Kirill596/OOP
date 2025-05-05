@@ -1,43 +1,37 @@
 import pytest
-from main import BaseProduct, Product, Smartphone, LawnGrass, LoggingMixin
+from main import Product, Category
 
 
-def test_base_product_is_abstract():
-    """Проверка, что BaseProduct - абстрактный класс"""
-    with pytest.raises(TypeError):
-        BaseProduct("Test", "Test", 100, 1)
+def test_product_zero_quantity():
+    """Тест создания продукта с нулевым количеством"""
+    with pytest.raises(ValueError) as excinfo:
+        Product("Телефон", "Смартфон", 10000, 0)
+    assert "Товар с нулевым количеством не может быть добавлен" in str(excinfo.value)
 
 
-def test_product_inheritance():
-    """Проверка наследования Product"""
-    assert issubclass(Product, (BaseProduct, LoggingMixin))
+def test_product_normal_creation():
+    """Тест нормального создания продукта"""
+    product = Product("Телефон", "Смартфон", 10000, 5)
+    assert product.name == "Телефон"
+    assert product.quantity == 5
 
 
-def test_smartphone_creation(capsys):
-    """Тест создания смартфона и логирования"""
-    _ = Smartphone(  # Используем _ для неиспользуемой переменной
-        "iPhone", "Smartphone", 100000, 10,
-        "A15", "13 Pro", 256, "Black"
-    )
-    captured = capsys.readouterr()
-    assert "Создан объект класса Smartphone" in captured.out
-    assert "iPhone" in captured.out
+def test_category_average_price_empty():
+    """Тест средней цены для пустой категории"""
+    category = Category("Электроника", "Техника")
+    assert category.average_price() == 0
 
 
-def test_lawn_grass_creation(capsys):
-    """Тест создания газонной травы и логирования"""
-    _ = LawnGrass(  # Используем _ для неиспользуемой переменной
-        "Grass", "Lawn", 500, 100,
-        "Russia", "14 days", "Green"
-    )
-    captured = capsys.readouterr()
-    assert "Создан объект класса LawnGrass" in captured.out
-    assert "Grass" in captured.out
+def test_category_average_price_with_products():
+    """Тест средней цены для категории с товарами"""
+    category = Category("Электроника", "Техника")
+    category.add_product(Product("Телефон", "Смартфон", 10000, 5))
+    category.add_product(Product("Ноутбук", "Игровой", 50000, 3))
+    assert category.average_price() == 30000
 
 
-def test_product_methods():
-    """Тест методов продукта"""
-    product = Product("Test", "Test", 100, 5)
-    assert str(product) == "Test, 100 руб. Остаток: 5 шт."
-    product2 = Product("Test", "Test", 100, 3)
-    assert product + product2 == 800
+def test_category_average_price_single_product():
+    """Тест средней цены для категории с одним товаром"""
+    category = Category("Электроника", "Техника")
+    category.add_product(Product("Телефон", "Смартфон", 10000, 5))
+    assert category.average_price() == 10000
