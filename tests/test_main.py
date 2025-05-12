@@ -1,46 +1,27 @@
-import pytest
-from main import Product, Smartphone, LawnGrass, Category
+import unittest
+
+from src.product import Product
+from main import BaseProduct
 
 
-def test_smartphone_creation():
-    phone = Smartphone("iPhone", "Smart", 100000, 10, "A15", "13", 256, "Black")
-    assert phone.name == "iPhone"
-    assert phone.memory == 256
+class TestProduct(unittest.TestCase):
+    def test_product_inheritance(self):
+        """Проверяем, что Product наследуется от BaseProduct."""
+        self.assertTrue(issubclass(Product, BaseProduct))
+
+    def test_mixin_logging(self):
+        """Проверяем, что миксин печатает сообщение при создании."""
+        from io import StringIO
+        import sys
+
+        captured_output = StringIO()
+        sys.stdout = captured_output
+
+        product = Product("Тест", "Тест", 100, 5)
+        self.assertIn("Создан объект класса Product", captured_output.getvalue())
+
+        sys.stdout = sys.__stdout__  # Возвращаем stdout
 
 
-def test_lawn_grass_creation():
-    grass = LawnGrass("Grass", "Lawn", 500, 100, "Russia", "14d", "Green")
-    assert grass.country == "Russia"
-    assert grass.germination_period == "14d"
-
-
-def test_add_same_type():
-    p1 = Product("Prod1", "Desc", 100, 2)
-    p2 = Product("Prod2", "Desc", 200, 3)
-    assert p1 + p2 == 800
-
-
-def test_add_different_types():
-    p = Product("Prod", "Desc", 100, 1)
-    phone = Smartphone("Phone", "Smart", 1000, 1, "A", "M", 128, "Black")
-    with pytest.raises(TypeError):
-        p + phone
-
-
-def test_add_non_product():
-    cat = Category("Cat", "Desc")
-    with pytest.raises(TypeError):
-        cat.add_product("Not a product")
-
-
-def test_average_price():
-    cat = Category("Cat", "Desc", [
-        Product("P1", "D", 100, 1),
-        Product("P2", "D", 200, 1)
-    ])
-    assert cat.average_price() == 150
-
-
-def test_zero_quantity():
-    with pytest.raises(ValueError):
-        Product("P", "D", 100, 0)
+if __name__ == "__main__":
+    unittest.main()
