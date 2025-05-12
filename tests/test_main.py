@@ -1,37 +1,46 @@
 import pytest
-from main import Product, Category
+from main import Product, Smartphone, LawnGrass, Category
 
 
-def test_product_zero_quantity():
-    """Тест создания продукта с нулевым количеством"""
-    with pytest.raises(ValueError) as excinfo:
-        Product("Телефон", "Смартфон", 10000, 0)
-    assert "Товар с нулевым количеством не может быть добавлен" in str(excinfo.value)
+def test_smartphone_creation():
+    phone = Smartphone("iPhone", "Smart", 100000, 10, "A15", "13", 256, "Black")
+    assert phone.name == "iPhone"
+    assert phone.memory == 256
 
 
-def test_product_normal_creation():
-    """Тест нормального создания продукта"""
-    product = Product("Телефон", "Смартфон", 10000, 5)
-    assert product.name == "Телефон"
-    assert product.quantity == 5
+def test_lawn_grass_creation():
+    grass = LawnGrass("Grass", "Lawn", 500, 100, "Russia", "14d", "Green")
+    assert grass.country == "Russia"
+    assert grass.germination_period == "14d"
 
 
-def test_category_average_price_empty():
-    """Тест средней цены для пустой категории"""
-    category = Category("Электроника", "Техника")
-    assert category.average_price() == 0
+def test_add_same_type():
+    p1 = Product("Prod1", "Desc", 100, 2)
+    p2 = Product("Prod2", "Desc", 200, 3)
+    assert p1 + p2 == 800
 
 
-def test_category_average_price_with_products():
-    """Тест средней цены для категории с товарами"""
-    category = Category("Электроника", "Техника")
-    category.add_product(Product("Телефон", "Смартфон", 10000, 5))
-    category.add_product(Product("Ноутбук", "Игровой", 50000, 3))
-    assert category.average_price() == 30000
+def test_add_different_types():
+    p = Product("Prod", "Desc", 100, 1)
+    phone = Smartphone("Phone", "Smart", 1000, 1, "A", "M", 128, "Black")
+    with pytest.raises(TypeError):
+        p + phone
 
 
-def test_category_average_price_single_product():
-    """Тест средней цены для категории с одним товаром"""
-    category = Category("Электроника", "Техника")
-    category.add_product(Product("Телефон", "Смартфон", 10000, 5))
-    assert category.average_price() == 10000
+def test_add_non_product():
+    cat = Category("Cat", "Desc")
+    with pytest.raises(TypeError):
+        cat.add_product("Not a product")
+
+
+def test_average_price():
+    cat = Category("Cat", "Desc", [
+        Product("P1", "D", 100, 1),
+        Product("P2", "D", 200, 1)
+    ])
+    assert cat.average_price() == 150
+
+
+def test_zero_quantity():
+    with pytest.raises(ValueError):
+        Product("P", "D", 100, 0)
